@@ -10,8 +10,9 @@ import {
 } from "react-icons/fa";
 
 function Signup() {
+  // 1. FIXED: Changed 'name' to 'username' to match backend
   const [formData, setFormData] = useState({
-    name: "",
+    username: "", 
     email: "",
     password: "",
     confirmPassword: "",
@@ -67,14 +68,14 @@ function Signup() {
         {error && <div style={styles.errorBox}>{error}</div>}
 
         <form onSubmit={handleSubmit} style={styles.form}>
-          {/* Name Field */}
+          {/* 2. FIXED: Name Field updated to use 'username' */}
           <div style={styles.inputGroup}>
             <FaUserAlt style={styles.icon} />
             <input
               type="text"
-              name="name"
+              name="username"          // Changed from "name"
               placeholder="Full Name"
-              value={formData.name}
+              value={formData.username} // Changed from "formData.name"
               onChange={handleChange}
               style={styles.input}
               required

@@ -10,6 +10,13 @@ function Header() {
 
   const isActive = (path) => location.pathname === path;
 
+  // Helper to safely get the display name
+  const getDisplayName = () => {
+    if (!user) return '';
+    // Check for 'username' (backend) or 'name' (legacy/frontend fallback)
+    return user.username || user.name || 'Student';
+  };
+
   return (
     <header style={styles.header}>
       <div style={styles.container}>
@@ -48,7 +55,8 @@ function Header() {
           <div style={styles.auth}>
             {user ? (
               <>
-                <span style={styles.userWelcome}>Hi, {user.name}</span>
+                {/* FIXED: Use helper function to prevent undefined errors */}
+                <span style={styles.userWelcome}>Hi, {getDisplayName()}</span>
                 <button onClick={logout} style={styles.logoutBtn}>
                   Logout
                 </button>

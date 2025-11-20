@@ -1,0 +1,45 @@
+const bcrypt = require('bcryptjs');
+
+module.exports = (sequelize, DataTypes) => {
+  const User = sequelize.define('User', {
+    id: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      primaryKey: true,
+    },
+    username: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      unique: true
+    },
+    email: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      unique: true,
+      validate: { isEmail: true }
+    },
+    password: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    role: { // Student, Instructor, Admin
+      type: DataTypes.STRING,
+      defaultValue: 'Student' 
+    }
+  }, {
+    hooks: {
+      // Hash password before saving to database
+      beforeCreate: async (user) => {
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(user.password, salt);
+      }
+    }
+  });
+
+  // Instance method to compare password
+  User.prototype.validPassword = function(password) {
+    return bcrypt.compareSync(password, this.password);
+  };
+
+  return User;
+};

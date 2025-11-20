@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { FaCreditCard, FaWallet, FaUniversity, FaLock, FaCheckCircle, FaUserCircle, FaShoppingBag } from 'react-icons/fa';
 
 function Checkout() {
-  const { cart, getCartTotal, createOrder, clearCart } = useCart();
+  const { cart, getCartTotal, createOrder } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
   
@@ -12,9 +13,23 @@ function Checkout() {
   const [isProcessing, setIsProcessing] = useState(false);
 
   const subtotal = getCartTotal();
-  const platformFee = 99;
-  const gst = Math.round((subtotal + platformFee) * 0.18);
-  const total = subtotal + platformFee + gst;
+  // --- REMOVED: platformFee and gst calculation ---
+  const total = subtotal; 
+
+  const paymentOptions = [
+    { value: 'card', label: 'Credit/Debit Card', icon: FaCreditCard },
+    { value: 'upi', label: 'UPI Payment', icon: FaWallet },
+    { value: 'netbanking', label: 'Net Banking', icon: FaUniversity },
+    { value: 'wallet', label: 'Digital Wallet', icon: FaShoppingBag },
+  ];
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      minimumFractionDigits: 0
+    }).format(amount);
+  };
 
   const handlePlaceOrder = async () => {
     if (!user) {
@@ -60,13 +75,15 @@ function Checkout() {
     <div style={styles.container}>
       <div style={styles.header}>
         <h1 style={styles.title}>Checkout</h1>
-        <p style={styles.subtitle}>Complete your purchase</p>
+        <p style={styles.subtitle}>Finalize your order and complete the payment</p>
       </div>
 
       <div style={styles.checkoutLayout}>
-        {/* Order Summary */}
+        
+        {/* LEFT COLUMN: Order Summary */}
         <div style={styles.orderSection}>
-          <h3 style={styles.sectionTitle}>Order Summary</h3>
+          <h3 style={styles.sectionTitle}>Order Summary ({cart.length} Items)</h3>
+          
           <div style={styles.orderItems}>
             {cart.map((item) => (
               <div key={item.id} style={styles.orderItem}>
@@ -75,127 +92,89 @@ function Checkout() {
                   <h4 style={styles.itemName}>{item.title}</h4>
                   <span style={styles.itemDomain}>{item.domain}</span>
                 </div>
-                <span style={styles.itemPrice}>₹{item.price}</span>
+                <span style={styles.itemPrice}>{formatCurrency(item.price * (item.quantity || 1))}</span>
               </div>
             ))}
           </div>
 
           <div style={styles.orderTotal}>
-            <div style={styles.totalRow}>
-              <span>Subtotal:</span>
-              <span>₹{subtotal}</span>
+            
+            {/* Final Total (Now just equals Subtotal) */}
+            <div style={styles.totalRowFinal}>
+              <strong style={{fontSize: '24px'}}>Total Payable:</strong>
+              <strong style={styles.finalTotal}>
+                {formatCurrency(total)}
+              </strong>
             </div>
-            <div style={styles.totalRow}>
-              <span>Platform Fee:</span>
-              <span>₹{platformFee}</span>
-            </div>
-            <div style={styles.totalRow}>
-              <span>GST (18%):</span>
-              <span>₹{gst}</span>
-            </div>
-            <div style={styles.totalDivider}></div>
-            <div style={styles.totalRow}>
-              <strong>Total Amount:</strong>
-              <strong style={styles.finalTotal}>₹{total}</strong>
+            
+            <div style={styles.securityNoteBottom}>
+              <FaCheckCircle style={{marginRight: 8}}/>
+              Includes lifetime access to source code & documentation.
             </div>
           </div>
         </div>
 
-        {/* Payment Section */}
+        {/* RIGHT COLUMN: Payment & Billing */}
         <div style={styles.paymentSection}>
-          <h3 style={styles.sectionTitle}>Payment Method</h3>
           
-          <div style={styles.paymentMethods}>
-            <label style={styles.paymentOption}>
-              <input
-                type="radio"
-                name="payment"
-                value="card"
-                checked={paymentMethod === 'card'}
-                onChange={(e) => setPaymentMethod(e.target.value)}
-                style={styles.radio}
-              />
-              <span style={styles.paymentLabel}>
-                <span style={styles.paymentIcon}>💳</span>
-                Credit/Debit Card
-              </span>
-            </label>
-
-            <label style={styles.paymentOption}>
-              <input
-                type="radio"
-                name="payment"
-                value="upi"
-                checked={paymentMethod === 'upi'}
-                onChange={(e) => setPaymentMethod(e.target.value)}
-                style={styles.radio}
-              />
-              <span style={styles.paymentLabel}>
-                <span style={styles.paymentIcon}>📱</span>
-                UPI Payment
-              </span>
-            </label>
-
-            <label style={styles.paymentOption}>
-              <input
-                type="radio"
-                name="payment"
-                value="netbanking"
-                checked={paymentMethod === 'netbanking'}
-                onChange={(e) => setPaymentMethod(e.target.value)}
-                style={styles.radio}
-              />
-              <span style={styles.paymentLabel}>
-                <span style={styles.paymentIcon}>🏦</span>
-                Net Banking
-              </span>
-            </label>
-
-            <label style={styles.paymentOption}>
-              <input
-                type="radio"
-                name="payment"
-                value="wallet"
-                checked={paymentMethod === 'wallet'}
-                onChange={(e) => setPaymentMethod(e.target.value)}
-                style={styles.radio}
-              />
-              <span style={styles.paymentLabel}>
-                <span style={styles.paymentIcon}>👛</span>
-                Digital Wallet
-              </span>
-            </label>
+          {/* Billing Information */}
+          <div style={styles.userInfo}>
+            <h4 style={styles.infoTitle}><FaUserCircle style={{marginRight: 8}}/> Billing Information</h4>
+            <div style={styles.infoRow}>
+              <strong>Name:</strong> <span>{user?.name || 'Guest User'}</span>
+            </div>
+            <div style={styles.infoRow}>
+              <strong>Email:</strong> <span>{user?.email || 'Not provided'}</span>
+            </div>
+            <div style={styles.infoRow}>
+              <strong>Delivery:</strong> <span>Instant Digital Delivery</span>
+            </div>
           </div>
 
-          {/* User Info */}
-          <div style={styles.userInfo}>
-            <h4 style={styles.infoTitle}>Billing Information</h4>
-            <div style={styles.infoRow}>
-              <strong>Name:</strong> {user?.name || 'Guest User'}
-            </div>
-            <div style={styles.infoRow}>
-              <strong>Email:</strong> {user?.email || 'Not provided'}
-            </div>
-            <div style={styles.infoRow}>
-              <strong>Delivery:</strong> Digital (Source code & documentation)
-            </div>
+          <h3 style={styles.sectionTitle}>Choose Payment Method</h3>
+          
+          <div style={styles.paymentMethods}>
+            {paymentOptions.map(option => (
+                <label key={option.value} 
+                       className="payment-option"
+                       style={{
+                           ...styles.paymentOption,
+                           borderColor: paymentMethod === option.value ? 'var(--primary)' : 'var(--border)',
+                           backgroundColor: paymentMethod === option.value ? 'var(--primary-bg, #f0f9ff)' : 'var(--surface)'
+                        }}
+                >
+                  <input
+                    type="radio"
+                    name="payment"
+                    value={option.value}
+                    checked={paymentMethod === option.value}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    style={styles.radio}
+                  />
+                  <span style={styles.paymentLabel}>
+                    <option.icon style={styles.paymentIcon} />
+                    {option.label}
+                  </span>
+                </label>
+            ))}
           </div>
 
           {/* Place Order Button */}
           <button
             onClick={handlePlaceOrder}
             disabled={isProcessing}
+            className="place-order-button"
             style={{
               ...styles.placeOrderButton,
               ...(isProcessing ? styles.processingButton : {})
             }}
           >
-            {isProcessing ? 'Processing Payment...' : `Pay ₹${total}`}
+            {isProcessing ? 'Processing Payment...' : `Confirm & Pay ${formatCurrency(total)}`}
           </button>
 
           <div style={styles.securityNote}>
-            <span style={styles.lockIcon}>🔒</span>
-            Your payment is secure and encrypted
+            <FaLock style={{marginRight: 8}}/>
+            Your connection is secure and encrypted.
           </div>
         </div>
       </div>
@@ -241,46 +220,49 @@ const styles = {
   },
   checkoutLayout: {
     display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '40px',
-    maxWidth: '1000px',
+    gridTemplateColumns: '1.2fr 1fr', // Slightly wider summary column
+    gap: '50px',
+    maxWidth: '1100px',
     margin: '0 auto',
     alignItems: 'start'
   },
   orderSection: {
     backgroundColor: 'var(--surface)',
-    padding: '25px',
-    borderRadius: '12px',
-    boxShadow: 'var(--shadow)',
-    border: '1px solid var(--border)'
+    padding: '30px',
+    borderRadius: '16px',
+    boxShadow: 'var(--shadow-lg)',
+    border: '1px solid #dbeafe'
   },
   paymentSection: {
     backgroundColor: 'var(--surface)',
-    padding: '25px',
-    borderRadius: '12px',
-    boxShadow: 'var(--shadow)',
-    border: '1px solid var(--border)',
+    padding: '30px',
+    borderRadius: '16px',
+    boxShadow: 'var(--shadow-lg)',
+    border: '1px solid #dbeafe',
     position: 'sticky',
-    top: '20px'
+    top: '100px' // Keep it sticky
   },
   sectionTitle: {
     color: 'var(--text-primary)',
     fontSize: '20px',
     marginBottom: '20px',
-    fontWeight: '600'
+    fontWeight: '700'
   },
   orderItems: {
-    marginBottom: '25px'
+    marginBottom: '25px',
+    borderBottom: '1px solid var(--border)',
+    paddingBottom: '15px'
   },
   orderItem: {
     display: 'flex',
     alignItems: 'center',
     gap: '15px',
-    padding: '15px 0',
-    borderBottom: '1px solid var(--border)'
+    padding: '12px 0',
+    borderTop: '1px dashed #f1f5f9'
   },
   itemIcon: {
-    fontSize: '24px'
+    fontSize: '22px',
+    flexShrink: 0
   },
   itemInfo: {
     flex: 1
@@ -288,51 +270,45 @@ const styles = {
   itemName: {
     color: 'var(--text-primary)',
     fontSize: '16px',
-    margin: '0 0 5px 0',
-    fontWeight: '500'
+    margin: '0 0 4px 0',
+    fontWeight: '600'
   },
   itemDomain: {
     color: 'var(--text-secondary)',
-    fontSize: '14px'
+    fontSize: '13px'
   },
   itemPrice: {
     color: 'var(--success)',
-    fontWeight: '600'
+    fontWeight: '700',
+    fontSize: '18px'
   },
   orderTotal: {
-    borderTop: '2px solid var(--border)',
     paddingTop: '20px'
   },
-  totalRow: {
+  totalRowFinal: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: '10px',
-    fontSize: '14px',
-    color: 'var(--text-secondary)'
-  },
-  totalDivider: {
-    height: '1px',
-    backgroundColor: 'var(--border)',
-    margin: '15px 0'
+    color: 'var(--text-primary)'
   },
   finalTotal: {
     color: 'var(--success)',
-    fontSize: '18px'
+    fontSize: '32px'
   },
   paymentMethods: {
-    marginBottom: '25px'
+    marginBottom: '30px'
   },
   paymentOption: {
     display: 'flex',
     alignItems: 'center',
     padding: '15px',
     border: '2px solid var(--border)',
-    borderRadius: '8px',
+    borderRadius: '12px',
     marginBottom: '10px',
     cursor: 'pointer',
-    transition: 'border-color 0.3s ease',
-    color: 'var(--text-primary)'
+    transition: 'all 0.3s ease',
+    color: 'var(--text-primary)',
   },
   radio: {
     marginRight: '15px'
@@ -341,57 +317,74 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: '10px',
-    fontWeight: '500'
+    fontWeight: '600',
+    fontSize: '16px'
   },
   paymentIcon: {
-    fontSize: '20px'
+    fontSize: '22px',
+    color: 'var(--primary)'
   },
   userInfo: {
-    backgroundColor: 'var(--hover-bg)',
+    backgroundColor: '#f1f5f9',
     padding: '20px',
-    borderRadius: '8px',
-    marginBottom: '25px',
-    color: 'var(--text-primary)'
+    borderRadius: '12px',
+    marginBottom: '30px',
+    color: 'var(--text-primary)',
+    border: '1px solid var(--border)'
   },
   infoTitle: {
-    color: 'var(--text-primary)',
-    fontSize: '16px',
+    color: 'var(--primary)',
+    fontSize: '18px',
     marginBottom: '15px',
-    fontWeight: '600'
+    fontWeight: '700',
+    display: 'flex',
+    alignItems: 'center'
   },
   infoRow: {
     marginBottom: '8px',
-    fontSize: '14px',
-    color: 'var(--text-secondary)'
+    fontSize: '15px',
+    color: 'var(--text-secondary)',
+    display: 'flex',
+    justifyContent: 'space-between'
   },
   placeOrderButton: {
     width: '100%',
-    padding: '16px',
-    backgroundColor: 'var(--success)',
+    padding: '18px',
+    background: 'linear-gradient(90deg, #16a34a, #059669)',
     color: 'white',
     border: 'none',
-    borderRadius: '8px',
-    fontSize: '18px',
-    fontWeight: '600',
+    borderRadius: '12px',
+    fontSize: '20px',
+    fontWeight: '800',
     cursor: 'pointer',
     marginBottom: '15px',
-    transition: 'background-color 0.3s ease'
+    transition: 'all 0.3s ease',
+    boxShadow: '0 4px 15px rgba(22, 163, 74, 0.4)'
   },
   processingButton: {
-    backgroundColor: 'var(--text-secondary)',
-    cursor: 'not-allowed'
+    backgroundColor: 'var(--text-muted)',
+    background: 'var(--text-muted)',
+    cursor: 'not-allowed',
+    opacity: 0.8
   },
   securityNote: {
+    textAlign: 'center',
+    color: 'var(--text-secondary)',
+    fontSize: '14px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontWeight: '500'
+  },
+  securityNoteBottom: {
     textAlign: 'center',
     color: 'var(--success)',
     fontSize: '14px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: '8px'
-  },
-  lockIcon: {
-    fontSize: '16px'
+    fontWeight: '500',
+    marginTop: '20px'
   }
 };
 
@@ -408,7 +401,20 @@ const interactiveStyle = `
     }
     
     .place-order-button:not(:disabled):hover {
-      background-color: var(--success-dark, #047857);
+      background: linear-gradient(90deg, #059669, #16a34a);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(22, 163, 74, 0.6);
+    }
+    
+    .place-order-button:not(:disabled):active {
+        transform: translateY(0);
+        box-shadow: none;
+    }
+  }
+  
+  @media (max-width: 900px) {
+    ${styles.checkoutLayout.gridTemplateColumns} {
+      grid-template-columns: 1fr;
     }
   }
 `;

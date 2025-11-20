@@ -1,51 +1,76 @@
-// src/components/internship/InternshipNavbar.js
-import React from "react";
-import { NavLink } from "react-router-dom";
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { FaGraduationCap } from 'react-icons/fa';
 
-export default function InternshipNavbar() {
-  const linkStyle = ({ isActive }) => ({
-    padding: "8px 12px",
-    borderRadius: 8,
-    textDecoration: "none",
-    color: isActive ? "#0f172a" : "#334155",
-    background: isActive ? "#e6f0ff" : "transparent",
-    fontWeight: isActive ? 700 : 600,
-    marginRight: 8,
-  });
-
+function InternshipNavbar() {
   return (
-    <nav style={styles.nav}>
-      <div style={styles.brand}>
-        <div style={styles.logo}>ByteGurukul</div>
-        <div style={styles.title}>Internships</div>
+    <header style={styles.navbar}>
+      <div style={styles.container}>
+        {/* Logo/Title */}
+        <Link to="/internship" style={styles.logoLink}>
+            <FaGraduationCap style={styles.logoIcon} />
+            <h1 style={styles.logoText}>Internship Portal</h1>
+        </Link>
+        
+        {/* Navigation Links */}
+        <nav style={styles.nav}>
+          <Link to="/internship" style={styles.navLink}>Open Roles</Link>
+          <Link to="/internship/status" style={styles.navLink}>My Applications</Link>
+          {/* Add more links if needed */}
+        </nav>
       </div>
-      <div style={styles.links}>
-        <NavLink to="/internship" style={linkStyle} end>Openings</NavLink>
-        <NavLink to="/internship/apply" style={linkStyle}>Apply</NavLink>
-        <NavLink to="/internship/status" style={linkStyle}>My Applications</NavLink>
-        <NavLink to="/internship/scheduler" style={linkStyle}>Scheduler</NavLink>
-        <NavLink to="/internship/tasks" style={linkStyle}>Tasks</NavLink>
-        <NavLink to="/internship/chat" style={linkStyle}>Recruiter Chat</NavLink>
-      </div>
-    </nav>
+    </header>
   );
 }
 
 const styles = {
-  nav: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "14px 20px",
-    background: "#ffffff",
-    borderBottom: "1px solid #e6eef8",
-    boxShadow: "0 2px 6px rgba(15,23,42,0.04)",
-    position: "sticky",
+  navbar: {
+    backgroundColor: 'var(--header-bg, #ffffff)',
+    padding: '8px 20px',
+    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+    borderBottom: '1px solid var(--border, #e5e7eb)',
+    position: 'sticky',
     top: 0,
-    zIndex: 90,
+    zIndex: 100,
   },
-  brand: { display: "flex", alignItems: "center", gap: 12 },
-  logo: { color: "#2563eb", fontWeight: 800, fontSize: 18 },
-  title: { fontSize: 15, color: "#0f172a", fontWeight: 700 },
-  links: { display: "flex", alignItems: "center" },
+  container: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    maxWidth: '1200px',
+    margin: '0 auto',
+    padding: '10px 0',
+  },
+  logoLink: {
+    textDecoration: 'none',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+  },
+  logoIcon: {
+      fontSize: '24px',
+      color: 'var(--primary, #2563eb)',
+  },
+  logoText: {
+    color: 'var(--primary, #2563eb)',
+    fontSize: '20px',
+    fontWeight: 'bold',
+    margin: 0,
+  },
+  nav: {
+    display: 'flex',
+    gap: '20px',
+  },
+  navLink: {
+    textDecoration: 'none',
+    color: 'var(--text-secondary)',
+    fontWeight: '500',
+    padding: '6px 10px',
+    borderRadius: '5px',
+    transition: 'all 0.2s ease',
+    fontSize: '15px',
+  },
+  // Add hover styles via CSS injection if necessary
 };
+
+export default InternshipNavbar;

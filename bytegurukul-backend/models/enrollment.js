@@ -1,0 +1,23 @@
+module.exports = (sequelize, DataTypes) => {
+  const Enrollment = sequelize.define('Enrollment', {
+    id: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      primaryKey: true,
+    },
+    userId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
+    courseId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
+    enrollmentDate: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW
+    }
+  });
+
+  return Enrollment;
+};

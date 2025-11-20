@@ -1,50 +1,61 @@
 import React from 'react';
 import { useCart } from '../contexts/CartContext';
 import { Link, useNavigate } from 'react-router-dom';
+import { FaShoppingCart, FaTrashAlt, FaLock, FaArrowRight } from 'react-icons/fa'; // Added icons
 
 function Cart() {
   // Destructure updateQuantity from useCart
   const { cart, removeFromCart, getCartTotal, clearCart, updateQuantity } = useCart();
   const navigate = useNavigate();
 
+  const subtotal = getCartTotal();
+  // --- CHANGES START HERE ---
+  // 1. Removed platformFee and gst calculation/variables
+  const total = subtotal; // Total is now just the subtotal
+  // --- CHANGES END HERE ---
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      minimumFractionDigits: 0
+    }).format(amount);
+  };
+
   if (cart.length === 0) {
     return (
       <div style={styles.container}>
         <div style={styles.emptyCart}>
-          <div style={styles.emptyIcon}>🛒</div>
+          <span style={styles.emptyIcon}>🛒</span>
           <h2 style={styles.emptyTitle}>Your cart is empty</h2>
           <p style={styles.emptyText}>Add some awesome projects to get started!</p>
           <Link to="/projects">
-            <button style={styles.shopButton}>Browse Projects</button>
+            <button className="shop-button" style={styles.shopButton}>Browse Projects</button>
           </Link>
         </div>
       </div>
     );
   }
 
-  const subtotal = getCartTotal();
-  const platformFee = 99;
-  const gst = Math.round((subtotal + platformFee) * 0.18);
-  const total = subtotal + platformFee + gst;
-
   return (
     <div style={styles.container}>
       <div style={styles.header}>
-        <h1 style={styles.title}>Shopping Cart</h1>
-        <p style={styles.subtitle}>{cart.length} project(s) in your cart</p>
+        <h1 style={styles.title}><FaShoppingCart style={{marginRight: 10}}/> Shopping Cart</h1>
+        <p style={styles.subtitle}>{cart.length} unique item(s) in your cart</p>
       </div>
 
       <div style={styles.cartLayout}>
-        {/* Cart Items */}
+        
+        {/* Cart Items List */}
         <div style={styles.cartItems}>
+          <h3 style={styles.listTitle}>Review Items</h3>
           {cart.map((item) => (
-            <div key={item.id} style={styles.cartItem}>
-              <div style={styles.itemImage}>
-                <span style={styles.itemIcon}>{item.icon}</span>
-              </div>
+            <div key={item.id} className="cart-item-card" style={styles.cartItem}>
+              
+              <span style={styles.itemIcon}>{item.icon}</span>
               
               <div style={styles.itemDetails}>
-                <h3 style={styles.itemTitle}>{item.title}</h3>
+                <h4 style={styles.itemTitle}>{item.title}</h4>
                 <p style={styles.itemDomain}>{item.domain}</p>
                 <div style={styles.techTags}>
                   {item.technologies.slice(0, 3).map((tech, index) => (
@@ -53,27 +64,30 @@ function Cart() {
                 </div>
               </div>
 
-              {/* Advanced Feature: Quantity Control */}
-              <div style={styles.itemPrice}>
+              <div style={styles.itemControls}>
+                {/* Quantity Control */}
                 <div style={styles.quantityControl}>
                   <label style={styles.quantityLabel}>Qty:</label>
                   <select 
                     value={item.quantity}
                     onChange={(e) => updateQuantity(item.id, parseInt(e.target.value))}
+                    className="quantity-select"
                     style={styles.quantitySelect}
                   >
-                    {[1, 2, 3, 4, 5].map(q => ( // Allow up to 5 items
+                    {[1, 2, 3, 4, 5].map(q => ( 
                       <option key={q} value={q}>{q}</option>
                     ))}
                   </select>
                 </div>
-                {/* Display total price for the item(s) */}
-                <div style={styles.price}>₹{item.price * item.quantity}</div> 
+                
+                <div style={styles.price}>{formatCurrency(item.price * item.quantity)}</div> 
+                
                 <button 
                   onClick={() => removeFromCart(item.id)}
+                  className="remove-button"
                   style={styles.removeButton}
                 >
-                  Remove
+                  <FaTrashAlt size={12}/> Remove
                 </button>
               </div>
             </div>
@@ -85,45 +99,45 @@ function Cart() {
           <h3 style={styles.summaryTitle}>Order Summary</h3>
           
           <div style={styles.summaryDetails}>
+            
+            {/* Display Subtotal */}
             <div style={styles.summaryRow}>
-              {/* Updated item count in summary */}
-              <span>Subtotal ({cart.reduce((count, item) => count + item.quantity, 0)} items):</span> 
-              <span>₹{subtotal}</span>
+              <span>Subtotal ({cart.reduce((count, item) => count + item.quantity, 0)} projects):</span> 
+              <strong style={{color: 'var(--text-primary)'}}>{formatCurrency(subtotal)}</strong>
             </div>
-            <div style={styles.summaryRow}>
-              <span>Platform Fee:</span>
-              <span>₹{platformFee}</span>
-            </div>
-            <div style={styles.summaryRow}>
-              <span>GST (18%):</span>
-              <span>₹{gst}</span>
-            </div>
+
+            {/* --- REMOVED: Platform Fee and GST rows --- */}
+            
             <div style={styles.summaryDivider}></div>
+            
+            {/* Final Total */}
             <div style={styles.summaryRow}>
-              <strong>Total:</strong>
-              <strong style={styles.totalPrice}>
-                ₹{total}
+              <strong style={{fontSize: '20px'}}>Total Payable:</strong>
+              <strong style={styles.finalTotal}>
+                {formatCurrency(total)}
               </strong>
             </div>
           </div>
 
           <button 
             onClick={() => navigate('/checkout')}
+            className="checkout-button"
             style={styles.checkoutButton}
           >
-            Proceed to Checkout
+            Proceed to Checkout <FaArrowRight style={{marginLeft: 10}}/>
           </button>
 
           <button 
             onClick={clearCart}
+            className="clear-cart-button"
             style={styles.clearCartButton}
           >
             Clear Cart
           </button>
 
-          <div style={styles.secureCheckout}>
-            <span style={styles.lockIcon}>🔒</span>
-            Secure checkout guaranteed
+          <div style={styles.securityNote}>
+            <FaLock style={{marginRight: 8}}/>
+            Secure and Encrypted Checkout
           </div>
         </div>
       </div>
@@ -146,7 +160,10 @@ const styles = {
     color: 'var(--primary)',
     fontSize: '36px',
     marginBottom: '10px',
-    fontWeight: 'bold'
+    fontWeight: 'bold',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
   },
   subtitle: {
     color: 'var(--text-secondary)',
@@ -158,8 +175,8 @@ const styles = {
     maxWidth: '400px',
     margin: '0 auto',
     backgroundColor: 'var(--surface)',
-    borderRadius: '12px',
-    boxShadow: 'var(--shadow)',
+    borderRadius: '16px',
+    boxShadow: 'var(--shadow-lg)',
     border: '1px solid var(--border)'
   },
   emptyIcon: {
@@ -177,14 +194,14 @@ const styles = {
   },
   shopButton: {
     padding: '12px 30px',
-    backgroundColor: 'var(--primary)',
+    background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))',
     color: 'white',
     border: 'none',
     borderRadius: '8px',
     fontSize: '16px',
     fontWeight: '600',
     cursor: 'pointer',
-    transition: 'background-color 0.3s ease'
+    transition: 'all 0.3s ease'
   },
   cartLayout: {
     display: 'grid',
@@ -193,6 +210,12 @@ const styles = {
     maxWidth: '1200px',
     margin: '0 auto',
     alignItems: 'start'
+  },
+  listTitle: {
+      fontSize: '20px',
+      fontWeight: '700',
+      marginBottom: '20px',
+      color: 'var(--text-primary)'
   },
   cartItems: {
     display: 'flex',
@@ -203,18 +226,16 @@ const styles = {
     backgroundColor: 'var(--surface)',
     padding: '25px',
     borderRadius: '12px',
-    boxShadow: 'var(--shadow)',
+    boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
     border: '1px solid var(--border)',
     display: 'flex',
     gap: '20px',
     alignItems: 'center',
-    transition: 'transform 0.3s ease, box-shadow 0.3s ease'
-  },
-  itemImage: {
-    flexShrink: 0
+    transition: 'transform 0.3s ease, box-shadow 0.3s ease',
   },
   itemIcon: {
-    fontSize: '40px'
+    fontSize: '36px',
+    flexShrink: 0
   },
   itemDetails: {
     flex: 1
@@ -223,12 +244,13 @@ const styles = {
     color: 'var(--text-primary)',
     fontSize: '18px',
     margin: '0 0 8px 0',
-    fontWeight: '600'
+    fontWeight: '700'
   },
   itemDomain: {
-    color: 'var(--text-secondary)',
+    color: 'var(--primary)',
     fontSize: '14px',
-    marginBottom: '10px'
+    marginBottom: '10px',
+    fontWeight: '600'
   },
   techTags: {
     display: 'flex',
@@ -236,28 +258,30 @@ const styles = {
     flexWrap: 'wrap'
   },
   techTag: {
-    backgroundColor: 'var(--primary-bg, #dbeafe)',
-    color: 'var(--primary)',
-    padding: '4px 8px',
+    backgroundColor: '#e0e7ff',
+    color: '#1e3a8a',
+    padding: '4px 10px',
     borderRadius: '12px',
     fontSize: '12px',
     fontWeight: '500'
   },
-  itemPrice: {
-    textAlign: 'right'
+  itemControls: {
+    textAlign: 'right',
+    flexShrink: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '10px',
+    alignItems: 'flex-end'
   },
   price: {
     color: 'var(--success)',
-    fontSize: '20px',
+    fontSize: '22px',
     fontWeight: 'bold',
-    marginBottom: '10px'
   },
-  // NEW STYLES FOR QUANTITY CONTROL
   quantityControl: {
     display: 'flex',
     alignItems: 'center',
-    gap: '10px',
-    marginBottom: '10px',
+    gap: '8px',
     justifyContent: 'flex-end'
   },
   quantityLabel: {
@@ -265,40 +289,45 @@ const styles = {
     color: 'var(--text-secondary)'
   },
   quantitySelect: {
-    padding: '5px 10px',
+    padding: '6px 10px',
     border: '1px solid var(--border)',
-    borderRadius: '4px',
+    borderRadius: '6px',
     backgroundColor: 'var(--background)',
     color: 'var(--text-primary)',
     fontSize: '14px',
     outline: 'none'
   },
-  // END NEW STYLES
   removeButton: {
     padding: '8px 16px',
-    border: '2px solid var(--error)',
-    backgroundColor: 'transparent',
-    color: 'var(--error)',
+    border: 'none',
+    backgroundColor: 'var(--error)',
+    color: 'white',
     borderRadius: '6px',
     cursor: 'pointer',
     fontSize: '14px',
-    fontWeight: '500',
-    transition: 'all 0.3s ease'
+    fontWeight: '600',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '5px',
+    transition: 'background-color 0.3s ease'
   },
   orderSummary: {
     backgroundColor: 'var(--surface)',
-    padding: '25px',
-    borderRadius: '12px',
-    boxShadow: 'var(--shadow)',
-    border: '1px solid var(--border)',
+    padding: '30px',
+    borderRadius: '16px',
+    boxShadow: 'var(--shadow-lg)',
+    border: '2px solid var(--primary)', // Enhanced Border
     position: 'sticky',
-    top: '20px'
+    top: '100px', // Adjusted sticky position to account for header
+    background: 'linear-gradient(145deg, var(--surface), #e0f2fe)'
   },
   summaryTitle: {
-    color: 'var(--text-primary)',
-    fontSize: '20px',
+    color: 'var(--primary)',
+    fontSize: '24px',
     marginBottom: '20px',
-    fontWeight: '600'
+    fontWeight: '800',
+    borderBottom: '2px solid #e0e7ff',
+    paddingBottom: '10px'
   },
   summaryDetails: {
     marginBottom: '25px'
@@ -307,31 +336,35 @@ const styles = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: '12px',
-    fontSize: '14px',
+    marginBottom: '15px',
+    fontSize: '16px',
     color: 'var(--text-secondary)'
   },
   summaryDivider: {
-    height: '1px',
-    backgroundColor: 'var(--border)',
+    height: '2px',
+    backgroundColor: '#dbeafe',
     margin: '15px 0'
   },
-  totalPrice: {
+  finalTotal: {
     color: 'var(--success)',
-    fontSize: '18px'
+    fontSize: '28px',
+    fontWeight: '800'
   },
   checkoutButton: {
     width: '100%',
-    padding: '15px',
-    backgroundColor: 'var(--success)',
+    padding: '16px',
+    background: 'linear-gradient(90deg, #16a34a, #059669)',
     color: 'white',
     border: 'none',
-    borderRadius: '8px',
-    fontSize: '16px',
-    fontWeight: '600',
+    borderRadius: '10px',
+    fontSize: '18px',
+    fontWeight: '700',
     cursor: 'pointer',
     marginBottom: '15px',
-    transition: 'background-color 0.3s ease'
+    transition: 'all 0.3s ease',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
   },
   clearCartButton: {
     width: '100%',
@@ -339,54 +372,67 @@ const styles = {
     border: '2px solid var(--border)',
     backgroundColor: 'transparent',
     color: 'var(--text-secondary)',
-    borderRadius: '8px',
+    borderRadius: '10px',
     fontSize: '14px',
-    fontWeight: '500',
+    fontWeight: '600',
     cursor: 'pointer',
     marginBottom: '20px',
     transition: 'all 0.3s ease'
   },
-  secureCheckout: {
+  securityNote: {
     textAlign: 'center',
-    color: 'var(--success)',
+    color: 'var(--primary)',
     fontSize: '14px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: '8px'
-  },
-  lockIcon: {
-    fontSize: '16px'
+    fontWeight: '500'
   }
 };
 
 // Add hover effects
 const hoverStyle = `
   @media (hover: hover) {
-    .cart-item:hover {
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-lg);
+    .cart-item-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.1);
     }
     
     .remove-button:hover {
-      background-color: var(--error);
-      color: white;
+      background-color: #b91c1c; /* Darker red */
     }
     
     .checkout-button:hover {
-      background-color: var(--success-dark, #047857);
+      background: linear-gradient(90deg, #059669, #16a34a);
+      box-shadow: 0 4px 15px rgba(22, 163, 74, 0.5);
     }
     
     .clear-cart-button:hover {
       background-color: var(--hover-bg);
+      color: var(--text-primary);
+      border-color: var(--primary);
     }
     
     .shop-button:hover {
-      background-color: var(--primary-dark);
+      opacity: 0.9;
     }
     
     .quantity-select:focus {
       border-color: var(--primary);
+    }
+    
+    .cart-indicator-float:hover {
+      transform: scale(1.05);
+      background-color: var(--primary-dark);
+    }
+  }
+  
+  @media (max-width: 900px) {
+    ${styles.cartLayout.gridTemplateColumns} {
+      grid-template-columns: 1fr;
+    }
+    ${styles.orderSummary} {
+      top: 20px; /* Adjust sticky position for mobile */
     }
   }
 `;
