@@ -1,16 +1,16 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useTheme } from "../contexts/ThemeContext";
 import { Link } from "react-router-dom";
+import axios from 'axios'; // <--- ADDED: For backend connection
 import AdminNavbar from "../components/admin/AdminNavbar";
 import { FaUserPlus, FaBook, FaDollarSign, FaChartLine, FaExclamationCircle, FaCheckCircle, FaUsers, FaGlobe, FaCogs } from "react-icons/fa";
-import { useCounter } from "./Home.js"; // Corrected import to use object destructuring
+import { useCounter } from "./Home.js"; 
 
 // Helper Component for Animated Stats
 const StatCard = ({ icon: Icon, title, value, trend, trendColor, isDark, colors }) => {
     
     // --- FEATURE: ANIMATED COUNT ---
-    // Extract number from value (e.g., 12543 from "12,543")
     const numericValue = parseInt(String(value).replace(/[$,]/g, "").split(' ')[0], 10) || 0;
     const animatedValue = useCounter(numericValue);
     const displayValue = (typeof value === 'string' && value.includes('$')) 
@@ -50,17 +50,40 @@ const StatCard = ({ icon: Icon, title, value, trend, trendColor, isDark, colors 
     );
 };
 
-
 function AdminDashboard() {
   const { user } = useAuth();
   const { theme } = useTheme(); 
-  const [activeTab, setActiveTab] = useState("overview"); // Tab state removed as per request, keeping variable for future proofing
+  const [activeTab, setActiveTab] = useState("overview"); 
 
-  // Mock Data
+  // --- NEW STATE: Real Internship Data ---
+  const [pendingApplications, setPendingApplications] = useState([]);
+  const [loadingApps, setLoadingApps] = useState(true);
+
+  // --- NEW EFFECT: Fetch Data from Database ---
+  useEffect(() => {
+    const fetchApplications = async () => {
+      try {
+        const res = await axios.get('http://localhost:5000/api/internship/all');
+        if (res.data.success) {
+          // Filter only for 'Pending' applications
+          const pending = res.data.data.filter(app => app.status === 'Pending');
+          setPendingApplications(pending);
+        }
+      } catch (error) {
+        console.error("Error fetching applications:", error);
+      } finally {
+        setLoadingApps(false);
+      }
+    };
+
+    fetchApplications();
+  }, []);
+
+  // --- MOCK DATA (Preserved for other sections) ---
   const platformStats = {
     totalUsers: 12543,
     totalCourses: 287,
-    totalRevenue: "124,850", // Changed to number string for animation
+    totalRevenue: "124,850", 
     activeInstructors: 56,
     newUsersThisMonth: 324,
     courseEnrollments: 4587,
@@ -71,11 +94,6 @@ function AdminDashboard() {
     { type: "course_created", message: 'New course published: "Advanced Python"', time: "5 hours ago" },
     { type: "payment_received", message: "Payment received: $49.99", time: "1 day ago" },
     { type: "instructor_approved", message: "Instructor approved: Sarah Wilson", time: "2 days ago" },
-  ];
-
-  const pendingApprovals = [
-    { id: 1, type: "Instructor", name: "Mike Johnson", email: "mike@example.com", submitted: "2025-11-10" },
-    { id: 2, type: "Course", name: "Machine Learning Basics", instructor: "Dr. Smith", submitted: "2025-11-09" },
   ];
 
   const topCourses = [
@@ -109,7 +127,7 @@ function AdminDashboard() {
       }}
     >
       <AdminNavbar />
-      <div style={styles.contentWrapper}> {/* Wrapper for max width */}
+      <div style={styles.contentWrapper}> 
         {/* WELCOME BANNER */}
         <div style={styles.welcomeBanner}>
             <h1 style={{ fontSize: 32, fontWeight: 800, margin: 0 }}>
@@ -119,7 +137,6 @@ function AdminDashboard() {
                 Welcome back, **{user?.name || "Admin"}**. Manage core operations and view system health.
             </p>
         </div>
-
 
         {/* STATS GRID */}
         <div
@@ -176,27 +193,40 @@ function AdminDashboard() {
             gap: "30px",
           }}
         >
-          {/* Pending Approvals (Priority Section) */}
+          {/* Pending Approvals (UPDATED TO REAL DATA) */}
           <div style={{ ...styles.sectionCard, background: colors.card, color: colors.text, border: `2px solid ${colors.warning}` }}>
             <div style={styles.sectionHeader}>
               <h2 style={{color: colors.warning}}><FaExclamationCircle style={{marginRight: 8}}/> Pending Approvals</h2>
               <Link to="/admin/approvals" style={{ ...styles.viewAll, color: colors.warning }}>
-                Review All →
+                 {loadingApps ? "Loading..." : `Review All (${pendingApplications.length})`} →
               </Link>
             </div>
-            {pendingApprovals.map((item) => (
-              <div key={item.id} className="approval-card-animated" style={{ ...styles.approvalCard, background: isDark ? "#334155" : "#fff7ed", border: `1px solid ${colors.warning}` }}>
-                <div>
-                  <h4 style={{margin: '0 0 5px 0', fontSize: '16px', fontWeight: '700'}}>{item.name}</h4>
-                  <p style={{ color: colors.secondary, margin: 0, fontSize: '13px' }}>{item.email || `Type: ${item.type} | By: ${item.instructor}`}</p>
-                  <small style={{ color: colors.secondary }}>Submitted: {new Date(item.submitted).toLocaleDateString()}</small>
-                </div>
-                <div>
-                  <button style={{ ...styles.approveButton, background: colors.success }}>✅ Approve</button>
-                  <button style={{ ...styles.rejectButton, background: colors.danger }}>❌ Reject</button>
-                </div>
-              </div>
-            ))}
+            
+            {loadingApps ? (
+                 <p style={{color: colors.secondary, fontStyle: 'italic'}}>Loading pending items...</p>
+            ) : pendingApplications.length === 0 ? (
+                 <p style={{color: colors.secondary, fontStyle: 'italic'}}>No pending applications found.</p>
+            ) : (
+                pendingApplications.slice(0, 5).map((item) => (
+                  <div key={item.id} className="approval-card-animated" style={{ ...styles.approvalCard, background: isDark ? "#334155" : "#fff7ed", border: `1px solid ${colors.warning}` }}>
+                    <div>
+                      <h4 style={{margin: '0 0 5px 0', fontSize: '16px', fontWeight: '700'}}>{item.name}</h4>
+                      {/* Displaying Real Data: University and Role */}
+                      <p style={{ color: colors.secondary, margin: 0, fontSize: '13px' }}>
+                         {item.university ? `${item.university}` : 'Unknown University'} | Role: {item.roleId}
+                      </p>
+                      <small style={{ color: colors.secondary }}>
+                         Applied: {new Date(item.createdAt).toLocaleDateString()}
+                      </small>
+                    </div>
+                    <div>
+                      <span style={{fontSize: '12px', fontWeight: 'bold', color: '#d97706', padding: '4px 8px', background: 'rgba(217, 119, 6, 0.1)', borderRadius: '4px'}}>
+                        WAITING REVIEW
+                      </span>
+                    </div>
+                  </div>
+                ))
+            )}
           </div>
 
           {/* Recent Activities */}
@@ -396,8 +426,10 @@ const hoverStyle = `
   }
 `;
 
-const styleSheet = document.createElement('style');
-styleSheet.innerText = hoverStyle;
-document.head.appendChild(styleSheet);
+if (typeof document !== 'undefined') {
+    const styleSheet = document.createElement('style');
+    styleSheet.innerText = hoverStyle;
+    document.head.appendChild(styleSheet);
+}
 
 export default AdminDashboard;

@@ -1,11 +1,13 @@
 import React, { useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import InternshipNavbar from "../../components/internship/InternshipNavbar"; // Correctly imported reusable component
+import axios from 'axios'; 
+import InternshipNavbar from "../../components/internship/InternshipNavbar"; 
 import { FaUser, FaEnvelope, FaPhone, FaUniversity, FaFileAlt, FaArrowLeft, FaCheckCircle, FaSpinner } from 'react-icons/fa';
 
 export default function InternshipApply() {
   const { id } = useParams();
   const navigate = useNavigate();
+  
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -18,7 +20,7 @@ export default function InternshipApply() {
 
   const handleChange = (e) => setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
   
-  // Custom validation to replace alert
+  // Custom validation
   const validate = () => {
     if (!form.name || !form.email || !form.phone) {
       setErrorMessage("Please fill in your Full Name, Email, and Phone number.");
@@ -28,25 +30,43 @@ export default function InternshipApply() {
     return true;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
     
     setSubmitting(true);
     setErrorMessage("");
 
-    // mock submit delay
-    setTimeout(() => {
+    try {
+      // Prepare payload matching backend model
+      const payload = {
+        ...form,
+        roleId: id 
+      };
+
+      // Send Data to Backend
+      const response = await axios.post('http://localhost:5000/api/internship/apply', payload);
+
+      if (response.data.success) {
+        // On success, navigate to success page with the real DB ID
+        navigate("/internship/application-success", { 
+            state: { 
+                appId: `APP-${response.data.data.id}`, 
+                openingId: id 
+            }
+        });
+      }
+    } catch (error) {
+      console.error("Submission Error:", error);
+      setErrorMessage(
+          error.response?.data?.message || "Failed to connect to server. Is the backend running?"
+      );
+    } finally {
       setSubmitting(false);
-      // In a real application, this would send data to an API (e.g., using projectAPI.post('/applications'))
-      // Upon success, navigate to the confirmation page.
-      navigate("/internship/application-success", { state: { appId: `APP-${Date.now()}`, openingId: id }});
-    }, 1500); // Increased delay for better visual feedback
+    }
   };
   
-  // Mock function to get the current role title based on the URL parameter
   const getRoleTitle = (id) => {
-    // This is a placeholder logic based on the passed ID
     switch (id) {
         case 'android': return 'Android Development Internship';
         case 'web': return 'Full Stack Web Development Internship';
@@ -63,7 +83,6 @@ export default function InternshipApply() {
       <div style={styles.mainContent}>
         <div style={styles.applicationCard}>
             
-          {/* Header Section */}
           <div style={styles.header}>
             <div style={styles.roleInfo}>
               <h1 style={styles.title}>Apply for: {roleTitle}</h1>
@@ -75,14 +94,12 @@ export default function InternshipApply() {
             </Link>
           </div>
           
-          {/* Error Message Display */}
           {errorMessage && (
             <div style={styles.errorBox}>
               {errorMessage}
             </div>
           )}
 
-          {/* Application Form */}
           <form onSubmit={handleSubmit} style={styles.form}>
             
             <h3 style={styles.formSectionTitle}>Personal Information</h3>
@@ -138,20 +155,19 @@ export default function InternshipApply() {
               </div>
             </div>
 
-            <h3 style={styles.formSectionTitle}>Resume / Summary (Demo)</h3>
+            <h3 style={styles.formSectionTitle}>Resume / Summary</h3>
             <div style={styles.inputGroup}>
                 <FaFileAlt style={{ ...styles.inputIcon, top: '20px' }} />
                 <textarea 
                     name="resumeText" 
                     value={form.resumeText} 
                     onChange={handleChange} 
-                    placeholder="Paste your resume content or a brief summary of your skills and experience here..." 
+                    placeholder="Paste your resume content or a brief summary of your skills here..." 
                     style={styles.textarea} 
                     className="form-textarea"
                 />
             </div>
 
-            {/* Actions */}
             <div style={styles.actions}>
               <button 
                 type="submit" 
@@ -174,87 +190,73 @@ export default function InternshipApply() {
                     </>
                 )}
               </button>
-              <Link to="/internship/status" style={styles.ghostBtn} className="ghostBtn">View My Applications</Link>
             </div>
           </form>
         </div>
       </div>
-      
     </div>
   );
 }
 
 const styles = {
-  // Global/Layout Styles
   page: { 
     fontFamily: "'Poppins', sans-serif", 
     minHeight: "100vh", 
-    backgroundColor: "var(--background)", // Using CSS variable from App.css
-    color: "var(--text-primary)",
+    backgroundColor: "#f8fafc",
+    color: "#1e293b",
   },
   mainContent: { 
     padding: "40px 20px", 
     display: 'flex', 
     justifyContent: 'center',
     alignItems: 'flex-start',
-    minHeight: 'calc(100vh - 80px)', // Adjust for header height
+    minHeight: 'calc(100vh - 80px)', 
   },
   applicationCard: {
     width: '100%',
     maxWidth: '900px',
     margin: '0 auto',
     padding: '30px',
-    background: "var(--surface, white)", 
+    background: "white", 
     borderRadius: 16, 
-    boxShadow: "var(--shadow-lg, 0 10px 25px rgba(0,0,0,0.1))", 
-    border: '1px solid var(--border, #e6eef8)'
+    boxShadow: "0 10px 25px rgba(0,0,0,0.05)", 
+    border: '1px solid #e6eef8'
   },
-  
-  // Header and Navigation
   header: { 
     display: "flex", 
     justifyContent: "space-between", 
     alignItems: "flex-start", 
     marginBottom: 25,
-    borderBottom: '1px solid var(--border)',
+    borderBottom: '1px solid #e2e8f0',
     paddingBottom: '20px'
   },
-  roleInfo: {
-    maxWidth: '70%'
-  },
+  roleInfo: { maxWidth: '70%' },
   title: { 
     margin: 0, 
     fontSize: '24px', 
     fontWeight: '700',
-    color: 'var(--primary, #2563eb)',
+    color: '#2563eb',
   },
   subtitle: { 
     margin: "6px 0 0", 
-    color: "var(--text-secondary, #64748b)",
+    color: "#64748b",
     fontSize: '15px'
   },
   backButton: { 
-    color: "var(--primary, #2563eb)", 
-    textDecoration: "none",
+    color: "#2563eb", 
+    textDecoration: "none", 
     fontWeight: '600',
     padding: '8px 12px',
     borderRadius: '8px',
-    backgroundColor: 'var(--hover-bg, #f3f4f6)',
+    backgroundColor: '#f1f5f9',
     display: 'flex',
     alignItems: 'center',
-    transition: 'background-color 0.3s ease'
   },
-
-  // Form Styles
-  form: { 
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '20px'
-  },
+  form: { display: 'flex', flexDirection: 'column', gap: '20px' },
   formSectionTitle: {
     fontSize: '18px',
     fontWeight: '600',
-    color: 'var(--text-primary)',
+    color: '#334155',
     marginTop: '10px',
     marginBottom: '5px'
   },
@@ -272,7 +274,7 @@ const styles = {
   inputIcon: {
     position: 'absolute',
     left: '12px',
-    color: 'var(--text-secondary, #64748b)',
+    color: '#64748b',
     fontSize: '16px',
     zIndex: 1
   },
@@ -280,36 +282,27 @@ const styles = {
     flex: 1, 
     padding: "12px 12px 12px 40px", 
     borderRadius: 10, 
-    border: "2px solid var(--border, #e6eef8)",
+    border: "2px solid #e2e8f0",
     fontSize: '16px',
     outline: 'none',
-    backgroundColor: 'var(--background)',
-    color: 'var(--text-primary)',
-    transition: 'border-color 0.3s ease',
   },
   textarea: { 
     width: "100%", 
     padding: "12px 12px 12px 40px", 
     minHeight: 140, 
     borderRadius: 10, 
-    border: "2px solid var(--border, #e6eef8)",
+    border: "2px solid #e2e8f0",
     fontSize: '16px',
     outline: 'none',
-    backgroundColor: 'var(--background)',
-    color: 'var(--text-primary)',
     resize: 'vertical',
-    transition: 'border-color 0.3s ease',
   },
-
-  // Actions
   actions: { 
     display: "flex", 
     gap: 15, 
     marginTop: 15,
-    flexWrap: 'wrap' // Responsive wrapping
   },
   primaryBtn: { 
-    backgroundColor: "var(--primary, #2563eb)", 
+    backgroundColor: "#2563eb", 
     color: "white", 
     padding: "14px 24px", 
     borderRadius: 10, 
@@ -320,99 +313,43 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    transition: 'background-color 0.3s ease, transform 0.1s ease',
     flexGrow: 1
   },
   loadingBtn: {
-    backgroundColor: 'var(--text-muted, #94a3b8)',
+    backgroundColor: '#94a3b8',
     cursor: 'not-allowed',
-  },
-  ghostBtn: { 
-    border: "2px solid var(--primary, #2563eb)", 
-    backgroundColor: 'transparent',
-    color: "var(--primary, #2563eb)", 
-    padding: "14px 24px", 
-    borderRadius: 10, 
-    textDecoration: "none",
-    fontWeight: 600,
-    fontSize: '16px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    transition: 'background-color 0.3s ease, transform 0.1s ease',
   },
   spinner: {
     animation: 'spin 1s linear infinite',
     marginRight: '8px'
   },
   errorBox: {
-    backgroundColor: 'var(--error-bg, #fee2e2)', 
-    color: 'var(--error, #dc2626)',
+    backgroundColor: '#fee2e2', 
+    color: '#dc2626',
     padding: '12px 20px',
     borderRadius: '10px',
     marginBottom: '20px',
-    border: '1px solid var(--error, #dc2626)',
+    border: '1px solid #dc2626',
     fontWeight: '500'
   }
 };
 
-// Inject custom hover and animation styles for a better look
 const customStyles = `
   @keyframes spin {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
   }
-
   @media (hover: hover) {
     .primaryBtn:hover:not(:disabled) {
-      background-color: var(--primary-dark, #1d4ed8);
-      transform: translateY(-1px);
+      background-color: #1d4ed8;
     }
-    
-    .ghostBtn:hover {
-      background-color: var(--primary, #2563eb);
-      color: white;
-      transform: translateY(-1px);
-    }
-    
-    .backButton:hover {
-        background-color: var(--primary, #2563eb);
-        color: white;
-    }
-    
     .form-input:focus, .form-textarea:focus {
-      border-color: var(--primary, #2563eb);
-      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
-    }
-  }
-  
-  @media (max-width: 640px) {
-    .applicationCard {
-        padding: 20px !important;
-    }
-    .header {
-        flex-direction: column;
-        align-items: flex-start !important;
-        gap: 15px;
-    }
-    .grid {
-        grid-template-columns: 1fr !important;
-    }
-    .backButton {
-        width: 100%;
-        justify-content: center;
-    }
-    .actions {
-        flex-direction: column;
-        gap: 15px;
-    }
-    .primaryBtn, .ghostBtn {
-        width: 100%;
+      border-color: #2563eb !important;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
     }
   }
 `;
 
-// Append CSS to head to enable dynamic styling and animations
 if (typeof document !== 'undefined') {
     const styleSheet = document.createElement('style');
     styleSheet.innerText = customStyles;
