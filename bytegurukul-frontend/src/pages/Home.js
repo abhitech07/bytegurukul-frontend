@@ -357,13 +357,16 @@ function Home() {
               Purchase ready-to-use projects categorized by domains.
             </p>
           </div>
-          <div style={styles.featureCard}>
-            <FaFileAlt style={{ fontSize: "60px", color: "#2563eb" }} />
-            <h3 style={styles.featureTitle}>PYQ Papers</h3>
-            <p style={styles.featureDesc}>
-              Access previous year question papers with solutions.
-            </p>
-          </div>
+          {/* WRAPPED IN LINK to make it clickable */}
+          <Link to="/pyq-papers" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+            <div style={styles.featureCard}>
+              <FaFileAlt style={{ fontSize: "60px", color: "#2563eb" }} />
+              <h3 style={styles.featureTitle}>PYQ Papers</h3>
+              <p style={styles.featureDesc}>
+                Access previous year question papers with solutions.
+              </p>
+            </div>
+          </Link>
         </div>
       </section>
 

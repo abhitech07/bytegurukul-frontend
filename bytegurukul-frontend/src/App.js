@@ -17,6 +17,8 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import Cart from './pages/Cart';
+import AdminApprovals from './pages/AdminApprovals';
+import PYQPapers from './pages/PYQPapers'; 
 import Checkout from './pages/Checkout';
 import OrderSuccess from './pages/OrderSuccess';
 import StudentOrders from './pages/StudentOrders';
@@ -30,7 +32,6 @@ import AdminSettings from './pages/AdminSettings';
 import AdminInterviews from "./pages/AdminInterviews"; 
 import AdminAnalytics from './pages/AdminAnalytics';
 import AdminReports from './pages/AdminReports';
-import AdminApprovals from './pages/AdminApprovals'; // <--- NEW IMPORT
 
 // Instructor Pages
 import InstructorCourses from "./pages/InstructorCourses";
@@ -72,6 +73,7 @@ function App() {
                   <Routes>
                     {/* Public Routes */}
                     <Route path="/" element={<Home />} />
+                    <Route path="/pyq-papers" element={<PYQPapers />} />
                     <Route path="/courses" element={<Courses />} />
                     <Route path="/courses/:courseId" element={<CourseDetail />} />
                     <Route path="/learn/:courseId" element={<LearningPage />} />

@@ -11,17 +11,13 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   
-  // 🔹 SECURE FIREBASE INIT
-  // We try to get the config from the window object (injected by environment)
-  // If not found, we use a dummy config to prevent the app from crashing immediately.
-  // In a real app, these values come from process.env
+  // 隼 SECURE FIREBASE INIT
   const firebaseConfig = window.__firebase_config ? JSON.parse(window.__firebase_config) : {
-    apiKey: "AIzaSyD-QMOCK-API-KEY-FOR-DEV-ENV", // Dummy key to prevent crash
+    apiKey: "AIzaSyD-QMOCK-API-KEY-FOR-DEV-ENV", 
     authDomain: "mock-project.firebaseapp.com",
     projectId: "mock-project",
   };
 
-  // Initialize Firebase only if it hasn't been initialized yet
   let app;
   let auth;
   try {
@@ -33,22 +29,18 @@ export function AuthProvider({ children }) {
     auth = getAuth(app);
   } catch (error) {
     console.error("Firebase Initialization Error:", error);
-    // Fallback auth object to prevent 'undefined' errors
     auth = { currentUser: null }; 
   }
 
-  // 🔹 Load user from localStorage & Firebase on app start
+  // 隼 Load user from localStorage & Firebase on app start
   useEffect(() => {
     const initAuth = async () => {
-      // 1. Try Firebase Auth (if configured)
       try {
         if (window.__initial_auth_token && auth.currentUser === null) {
-           // Only if we have a valid token and a real auth instance
            if(firebaseConfig.apiKey !== "AIzaSyD-QMOCK-API-KEY-FOR-DEV-ENV") {
               await signInWithCustomToken(auth, window.__initial_auth_token);
            }
         } else if (auth.currentUser === null) {
-           // Only sign in anonymously if we have a real config
            if(firebaseConfig.apiKey !== "AIzaSyD-QMOCK-API-KEY-FOR-DEV-ENV") {
               await signInAnonymously(auth);
            }
@@ -58,11 +50,15 @@ export function AuthProvider({ children }) {
       }
 
       // 2. Backend Auth Check (localStorage)
-      // This is the critical part for your existing data
       try {
         const storedUser = authService.getCurrentUser();
         if (storedUser) {
           setUser(storedUser);
+          // If user is already logged in, redirect them to the correct dashboard on load
+          const role = (storedUser.role || "").toLowerCase();
+          if (role === "admin") navigate("/admin-dashboard");
+          else if (role === "instructor") navigate("/instructor-dashboard");
+          // NOTE: Navigation to /dashboard is now handled by Layout/Router Guard in App.js
         }
       } catch (error) {
         console.error("Auth initialization failed:", error);
@@ -74,7 +70,6 @@ export function AuthProvider({ children }) {
 
     initAuth();
     
-    // Firebase listener (only active if auth is real)
     let unsubscribe = () => {};
     if (auth.onAuthStateChanged) {
         unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
@@ -85,30 +80,41 @@ export function AuthProvider({ children }) {
     }
     
     return () => unsubscribe();
-  }, [auth, firebaseConfig.apiKey]);
+  }, [auth, firebaseConfig.apiKey, navigate]);
 
-  // 🔹 LOGIN (Connects to Backend)
+  // 隼 LOGIN (Connects to Backend)
   const login = async (email, password) => {
     try {
       const response = await authService.login({ email, password });
       
       if (response.success) {
         const userData = response.data;
-        setUser(userData);
         
-        const role = userData.role;
-        if (role === "admin") navigate("/admin-dashboard");
-        else if (role === "instructor") navigate("/instructor-dashboard");
-        else navigate("/dashboard");
+        // CRITICAL: Ensure user state is set immediately after success
+        setUser(userData); 
+
+        // CRITICAL FIX: Ensure role comparison is case-insensitive
+        const role = (userData.role || "").toLowerCase(); 
+        
+        if (role === "admin") {
+            navigate("/admin-dashboard");
+        }
+        else if (role === "instructor") {
+             navigate("/instructor-dashboard");
+        }
+        else {
+             // Default student dashboard
+             navigate("/dashboard");
+        }
       }
       return response;
     } catch (error) {
-      console.error("Login failed:", error);
-      throw error;
+      // Re-throw the error so the Login page can display "Invalid credentials"
+      throw error; 
     }
   };
 
-  // 🔹 SIGNUP (Connects to Backend)
+  // 隼 SIGNUP (Connects to Backend)
   const register = async (formData) => {
     try {
       const response = await authService.register(formData);
@@ -116,7 +122,7 @@ export function AuthProvider({ children }) {
       if (response.success) {
         const userData = response.data;
 
-        // Manually save session
+        // Manually save session (AuthService does this too, but for surety)
         if (userData.token) {
             localStorage.setItem('token', userData.token);
             localStorage.setItem('user', JSON.stringify(userData));
@@ -132,7 +138,7 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // 🔹 LOGOUT
+  // 隼 LOGOUT
   const logout = () => {
     authService.logout();
     setUser(null);

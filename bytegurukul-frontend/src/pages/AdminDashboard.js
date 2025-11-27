@@ -2,15 +2,17 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useTheme } from "../contexts/ThemeContext";
 import { Link } from "react-router-dom";
-import axios from 'axios'; // <--- ADDED: For backend connection
+import axios from 'axios'; 
 import AdminNavbar from "../components/admin/AdminNavbar";
-import { FaUserPlus, FaBook, FaDollarSign, FaChartLine, FaExclamationCircle, FaCheckCircle, FaUsers, FaGlobe, FaCogs } from "react-icons/fa";
+import { 
+    FaUserPlus, FaBook, FaDollarSign, FaChartLine, 
+    FaExclamationCircle, FaCheckCircle, FaUsers, 
+    FaGlobe, FaCogs, FaFileUpload 
+} from "react-icons/fa";
 import { useCounter } from "./Home.js"; 
 
 // Helper Component for Animated Stats
 const StatCard = ({ icon: Icon, title, value, trend, trendColor, isDark, colors }) => {
-    
-    // --- FEATURE: ANIMATED COUNT ---
     const numericValue = parseInt(String(value).replace(/[$,]/g, "").split(' ')[0], 10) || 0;
     const animatedValue = useCounter(numericValue);
     const displayValue = (typeof value === 'string' && value.includes('$')) 
@@ -21,7 +23,7 @@ const StatCard = ({ icon: Icon, title, value, trend, trendColor, isDark, colors 
 
     return (
         <div
-            key={title}
+            className="stat-card-animated"
             style={{
               background: colors.card,
               padding: "25px",
@@ -36,7 +38,6 @@ const StatCard = ({ icon: Icon, title, value, trend, trendColor, isDark, colors 
               cursor: 'pointer',
               transition: "transform 0.3s ease, box-shadow 0.3s ease",
             }}
-            className="stat-card-animated"
         >
             {IconComponent}
             <div>
@@ -53,13 +54,10 @@ const StatCard = ({ icon: Icon, title, value, trend, trendColor, isDark, colors 
 function AdminDashboard() {
   const { user } = useAuth();
   const { theme } = useTheme(); 
-  const [activeTab, setActiveTab] = useState("overview"); 
-
-  // --- NEW STATE: Real Internship Data ---
   const [pendingApplications, setPendingApplications] = useState([]);
   const [loadingApps, setLoadingApps] = useState(true);
 
-  // --- NEW EFFECT: Fetch Data from Database ---
+  // --- BACKEND CONNECTION: Fetch Pending Applications ---
   useEffect(() => {
     const fetchApplications = async () => {
       try {
@@ -79,7 +77,25 @@ function AdminDashboard() {
     fetchApplications();
   }, []);
 
-  // --- MOCK DATA (Preserved for other sections) ---
+  const updateStatus = async (id, newStatus) => {
+    try {
+        const token = localStorage.getItem('token');
+        await axios.put(
+            `http://localhost:5000/api/internship/${id}/status`, 
+            { status: newStatus },
+            { headers: { Authorization: `Bearer ${token}` } }
+        );
+        
+        // Refresh the list locally to remove the item
+        setPendingApplications(prev => prev.filter(app => app.id !== id));
+        alert(`Application ${newStatus} successfully!`);
+    } catch (error) {
+        console.error("Failed to update status", error);
+        alert("Failed to update status");
+    }
+  };
+
+  // --- MOCK DATA (Preserved) ---
   const platformStats = {
     totalUsers: 12543,
     totalCourses: 287,
@@ -139,14 +155,7 @@ function AdminDashboard() {
         </div>
 
         {/* STATS GRID */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-            gap: "20px",
-            marginBottom: "40px",
-          }}
-        >
+        <div style={styles.statsGrid}>
           <StatCard 
             icon={FaUsers} 
             title="Total Users" 
@@ -186,14 +195,8 @@ function AdminDashboard() {
         </div>
 
         {/* MAIN CONTENT GRID */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))",
-            gap: "30px",
-          }}
-        >
-          {/* Pending Approvals (UPDATED TO REAL DATA) */}
+        <div style={styles.mainGrid}>
+          {/* 1. Pending Approvals (Real Data) */}
           <div style={{ ...styles.sectionCard, background: colors.card, color: colors.text, border: `2px solid ${colors.warning}` }}>
             <div style={styles.sectionHeader}>
               <h2 style={{color: colors.warning}}><FaExclamationCircle style={{marginRight: 8}}/> Pending Approvals</h2>
@@ -211,7 +214,6 @@ function AdminDashboard() {
                   <div key={item.id} className="approval-card-animated" style={{ ...styles.approvalCard, background: isDark ? "#334155" : "#fff7ed", border: `1px solid ${colors.warning}` }}>
                     <div>
                       <h4 style={{margin: '0 0 5px 0', fontSize: '16px', fontWeight: '700'}}>{item.name}</h4>
-                      {/* Displaying Real Data: University and Role */}
                       <p style={{ color: colors.secondary, margin: 0, fontSize: '13px' }}>
                          {item.university ? `${item.university}` : 'Unknown University'} | Role: {item.roleId}
                       </p>
@@ -219,17 +221,26 @@ function AdminDashboard() {
                          Applied: {new Date(item.createdAt).toLocaleDateString()}
                       </small>
                     </div>
-                    <div>
-                      <span style={{fontSize: '12px', fontWeight: 'bold', color: '#d97706', padding: '4px 8px', background: 'rgba(217, 119, 6, 0.1)', borderRadius: '4px'}}>
-                        WAITING REVIEW
-                      </span>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                        <button 
+                            style={{...styles.actionBtn, backgroundColor: colors.success}} 
+                            onClick={() => updateStatus(item.id, 'Approved')}
+                        >
+                            Approve
+                        </button>
+                        <button 
+                            style={{...styles.actionBtn, backgroundColor: colors.danger}} 
+                            onClick={() => updateStatus(item.id, 'Rejected')}
+                        >
+                            Reject
+                        </button>
                     </div>
                   </div>
                 ))
             )}
           </div>
 
-          {/* Recent Activities */}
+          {/* 2. Recent Activities (Preserved) */}
           <div style={{ ...styles.sectionCard, background: colors.card }}>
             <div style={styles.sectionHeader}>
               <h2>Recent Activities</h2>
@@ -253,7 +264,7 @@ function AdminDashboard() {
             ))}
           </div>
 
-          {/* Top Courses */}
+          {/* 3. Top Courses (Preserved) */}
           <div style={{ ...styles.sectionCard, background: colors.card }}>
             <div style={styles.sectionHeader}>
               <h2>Top Performing Courses</h2>
@@ -277,7 +288,7 @@ function AdminDashboard() {
             ))}
           </div>
           
-          {/* NEW: QUICK LINKS / SYSTEM TOOLS */}
+          {/* 4. Quick Links / System Tools (UPDATED) */}
           <div style={{ ...styles.sectionCard, background: colors.card }}>
             <h2 style={{marginBottom: '20px'}}><FaCogs style={{marginRight: 8}}/> Quick System Tools</h2>
             <div style={styles.quickLinksGrid}>
@@ -285,6 +296,11 @@ function AdminDashboard() {
                 <Link to="/admin/instructors" style={styles.quickLinkButton}>Manage Instructors</Link>
                 <Link to="/admin/analytics" style={styles.quickLinkButton}>View Analytics</Link>
                 <Link to="/admin/reports" style={styles.quickLinkButton}>Generate Reports</Link>
+                
+                {/* --- ADDED PYQ UPLOAD BUTTON --- */}
+                <Link to="/admin/pyq" style={{ ...styles.quickLinkButton, backgroundColor: '#7c3aed' }}>
+                    <FaFileUpload style={{marginRight: '8px'}}/> Upload PYQ Paper
+                </Link>
             </div>
             <div style={styles.systemStatus}>
                 <p>System Status: <FaCheckCircle style={{color: colors.success, marginRight: '5px'}}/> Operational</p>
@@ -308,6 +324,17 @@ const styles = {
     paddingBottom: '20px',
     borderBottom: '2px dashed #dbeafe',
     marginBottom: '20px'
+  },
+  statsGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+    gap: "20px",
+    marginBottom: "40px",
+  },
+  mainGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))",
+    gap: "30px",
   },
   sectionCard: {
     borderRadius: "16px",
@@ -335,23 +362,12 @@ const styles = {
     marginBottom: "10px",
     transition: 'transform 0.2s',
   },
-  approveButton: {
+  actionBtn: {
     border: "none",
     color: "white",
     borderRadius: "6px",
     padding: "8px 14px",
     cursor: "pointer",
-    fontWeight: '600',
-    transition: 'opacity 0.2s',
-    fontSize: '13px'
-  },
-  rejectButton: {
-    border: "none",
-    color: "white",
-    borderRadius: "6px",
-    padding: "8px 14px",
-    cursor: "pointer",
-    marginLeft: "5px",
     fontWeight: '600',
     transition: 'opacity 0.2s',
     fontSize: '13px'
@@ -388,6 +404,9 @@ const styles = {
       borderRadius: '10px',
       fontWeight: '600',
       textAlign: 'center',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
       transition: 'background-color 0.2s, transform 0.2s',
       boxShadow: '0 4px 10px rgba(0,0,0,0.1)'
   },
@@ -415,14 +434,8 @@ const hoverStyle = `
       box-shadow: 0 4px 10px rgba(0,0,0,0.15);
   }
   .quickLinkButton:hover {
-      background-color: #1e40af !important;
+      filter: brightness(90%);
       transform: translateY(-2px);
-  }
-  ${styles.approveButton}:hover {
-      opacity: 0.85;
-  }
-  ${styles.rejectButton}:hover {
-      opacity: 0.85;
   }
 `;
 

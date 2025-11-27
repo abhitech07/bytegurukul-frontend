@@ -29,10 +29,26 @@ function Header() {
 
         {/* Navigation */}
         <nav style={styles.nav}>
-          <Link to="/" style={{ ...styles.navLink, ...(isActive('/') ? styles.activeNavLink : {}) }}>Home</Link>
-          <Link to="/courses" style={{ ...styles.navLink, ...(isActive('/courses') ? styles.activeNavLink : {}) }}>Courses</Link>
-          <Link to="/internship" style={{ ...styles.navLink, ...(isActive('/internship') ? styles.activeNavLink : {}) }}>Internship</Link>
-          <Link to="/projects" style={{ ...styles.navLink, ...(isActive('/projects') ? styles.activeNavLink : {}) }}>Projects</Link>
+          <Link to="/" style={{ ...styles.navLink, ...(isActive('/') ? styles.activeNavLink : {}) }}>
+            Home
+          </Link>
+          <Link to="/courses" style={{ ...styles.navLink, ...(isActive('/courses') ? styles.activeNavLink : {}) }}>
+            Courses
+          </Link>
+          <Link to="/internship" style={{ ...styles.navLink, ...(isActive('/internship') ? styles.activeNavLink : {}) }}>
+            Internship
+          </Link>
+          
+          {/* --- ADDED PYQ PAPERS LINK HERE --- */}
+          <Link to="/pyq-papers" style={{ ...styles.navLink, ...(isActive('/pyq-papers') ? styles.activeNavLink : {}) }}>
+            PYQ Papers
+          </Link>
+          {/* ---------------------------------- */}
+
+          <Link to="/projects" style={{ ...styles.navLink, ...(isActive('/projects') ? styles.activeNavLink : {}) }}>
+            Projects
+          </Link>
+          
           {user && (
             <Link to="/dashboard" style={{ ...styles.navLink, ...(isActive('/dashboard') ? styles.activeNavLink : {}) }}>
               Dashboard
@@ -55,7 +71,6 @@ function Header() {
           <div style={styles.auth}>
             {user ? (
               <>
-                {/* FIXED: Use helper function to prevent undefined errors */}
                 <span style={styles.userWelcome}>Hi, {getDisplayName()}</span>
                 <button onClick={logout} style={styles.logoutBtn}>
                   Logout

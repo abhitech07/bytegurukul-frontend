@@ -1,60 +1,47 @@
-require('dotenv').config(); // Load environment variables for DB connection
-const bcrypt = require('bcryptjs'); // Changed from 'bcrypt' to 'bcryptjs'
-const db = require('./models'); // Import the whole db object
+const bcrypt = require('bcryptjs');
+const { User, sequelize } = require('./models'); // Adjust path to your models if needed
 
-async function createAdmin() {
-  try {
-    // 1. Define credentials
-    const username = 'admin'; // Added required username
-    const email = 'admin@bytegurukul.com';
-    const password = 'admin123'; 
-    const name = 'Super Admin';
-    const phone = '9999999999';
+const createAdmin = async () => {
+    try {
+        await sequelize.authenticate();
+        console.log('Database connected.');
 
-    // 2. Check for User model (handles case sensitivity)
-    const User = db.User || db.user; 
-    if (!User) {
-      throw new Error('User model not found in ./models. Check your model export name.');
+        // --- CHANGE THESE DETAILS ---
+        const adminData = {
+            username: 'AdminUser',
+            email: 'admin@bytegurukul.com',
+            password: 'secureAdminPassword123', // You will use this to login
+            role: 'Admin' // Ensure this matches your Role logic (case-sensitive)
+        };
+
+        // Manually hash the password since we might use bulkCreate or update which bypasses hooks sometimes
+        // or to be explicit.
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(adminData.password, salt);
+
+        const existingAdmin = await User.findOne({ where: { email: adminData.email } });
+        
+        if (existingAdmin) {
+            console.log('Admin user already exists. Updating password...');
+            // Update the existing user's password
+            existingAdmin.password = hashedPassword;
+            existingAdmin.role = adminData.role; // Ensure role is correct
+            await existingAdmin.save();
+            console.log('Admin password updated successfully!');
+        } else {
+            // Create new admin with hashed password
+            const admin = await User.create({
+                ...adminData,
+                password: hashedPassword
+            });
+            console.log(`Admin created successfully! \nEmail: ${admin.email} \nRole: ${admin.role}`);
+        }
+
+    } catch (error) {
+        console.error('Error creating/updating admin:', error);
+    } finally {
+        await sequelize.close();
     }
-
-    // 3. Hash Password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    // 4. Check if admin exists
-    const existingUser = await User.findOne({ where: { email } });
-    if (existingUser) {
-      console.log('⚠️  Admin user already exists!');
-      return;
-    }
-
-    // 5. Create Admin
-    await User.create({
-      username, // Added username field here
-      name,
-      email,
-      password: hashedPassword,
-      phone,
-      role: 'admin'
-    });
-
-    console.log('=========================================');
-    console.log('✅ ADMIN ACCOUNT CREATED SUCCESSFULLY');
-    console.log('=========================================');
-    console.log(`Login URL: http://localhost:3000/login`);
-    console.log(`Username:  ${username}`);
-    console.log(`Email:     ${email}`);
-    console.log(`Password:  ${password}`);
-    console.log('=========================================');
-
-  } catch (error) {
-    console.error('❌ Error creating admin:', error.message);
-  } finally {
-    // Close DB connection so the script exits properly
-    if(db.sequelize) {
-        await db.sequelize.close();
-    }
-  }
-}
+};
 
 createAdmin();
